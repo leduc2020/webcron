@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Simple Cron Panel</title>
+</head>
+<body>
+  <h1>Quản lý CRON</h1>
+
+  <form id="addJob">
+    <input name="name" placeholder="Tên job" required>
+    <input name="url" placeholder="URL" required>
+    <select name="method">
+      <option>GET</option>
+      <option>POST</option>
+    </select>
+    <input name="interval_seconds" type="number" placeholder="Seconds" required>
+    <button type="submit">Thêm</button>
+  </form>
+
+  <h2>Danh sách job</h2>
+  <table border="1" id="jobList"></table>
+
+  <script>
+    async function loadJobs() {
+      const res = await fetch('/api/cron');
+      const jobs = await res.json();
+      document.getElementById('jobList').innerHTML = 
+        '<tr><th>Tên</th><th>URL</th><th>Method</th><th>Interval</th><th>Run Count</th><th>Last Run</th><th>Hành động</th></tr>' +
+        jobs.map(j => 
+          `<tr>
+            <td>${j.name}</td>
+            <td>${j.url}</td>
+            <td>${j.method}</td>
+            <td>
+              <input type="number" value="${j.interval_seconds}" onchange="updateInterval('${j.id}', this.value)">
+            </td>
+            <td>${j.run_count}</td>
+            <td>${j.last_run || '-'}</td>
+            <td><button onclick="deleteJob('${j.id}')">Xoá</button></td>
+          </tr>`
+        ).join('');
+    }
+
+    async function updateInterval(id, val) {
+      await fetch('/api/cron/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ interval_seconds: parseInt(val) })
+      });
+      loadJobs();
+    }
+
+    async function deleteJob(id) {
+      await fetch('/api/cron/' + id, { method: 'DELETE' });
+      loadJobs();
+    }
+
+    document.getElementById('addJob').onsubmit = async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      await fetch('/api/cron', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(Object.fromEntries(form.entries()))
+      });
+      e.target.reset();
+      loadJobs();
+    };
+
+    loadJobs();
+  </script>
+</body>
+</html>
+
+<!-- Footer -->
+<footer class="text-center py-6 border-t mt-8">
+  <p>
+    © 2025 <b>ThuyLinhSub.Click</b>. All Rights Reserved.
+    <span id="clock" style="font-weight: bold; margin-left: 10px;"></span>
+  </p>
+  <div class="flex justify-center gap-4 mt-3">
+    <a
+      href="https://www.facebook.com/share/14JkBKPs2qP/"
+      target="_blank"
+      class="hover:opacity-75 transition-all"
+    >
+      <img
+        src="https://cdn.mypanel.link/4cgr8h/9rjnzbd98rt8s5we.gif"
+        width="32"
+        alt="Facebook"
+      />
+    </a>
+    <a
+      href="https://instagram.com/your_instagram"
+      target="_blank"
+      class="hover:opacity-75 transition-all"
+    >
+      <img
+        src="https://cdn.mypanel.link/4cgr8h/15z7egnk0elz7gzm.gif"
+        width="32"
+        alt="Instagram"
+      />
+    </a>
+    <a
+      href="https://www.tiktok.com/@l.dmusic1?_t=ZS-8zFGSa3bd3q&_r=1"
+      target="_blank"
+      class="hover:opacity-75 transition-all"
+    >
+      <img
+        src="https://cdn.mypanel.link/4cgr8h/ewzs0f9k8ic2932y.gif"
+        width="32"
+        alt="TikTok"
+      />
+    </a>
+    <a
+      href="https://github.com/leduc2020"
+      target="_blank"
+      class="hover:opacity-75 transition-all"
+    >
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/733/733553.png"
+        width="32"
+        alt="GitHub"
+      />
+    </a>
+  </div>
+</footer>
+
+<!-- Clock Script -->
+<script>
+  function updateClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString("vi-VN", { hour12: false });
+    document.getElementById("clock").innerText = time;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+</script>
